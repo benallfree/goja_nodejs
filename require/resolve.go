@@ -233,18 +233,11 @@ func (r *RequireModule) loadNodeModules(modpath, start string) (module *js.Objec
 func (r *RequireModule) getCurrentModulePath() string {
 	var buf [2]js.StackFrame
 	frames := r.runtime.CaptureCallStack(2, buf[:0])
-	start := "."
-	if len(frames) >= 2 {
-		start = path.Dir(frames[1].SrcName())
+
+	if len(frames) < 2 {
+		return "."
 	}
-	if start == "." {
-		wd, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-		return wd
-	}
-	return start
+	return path.Dir(frames[1].SrcName())
 }
 
 func (r *RequireModule) createModuleObject() *js.Object {
