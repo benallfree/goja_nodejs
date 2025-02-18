@@ -42,6 +42,16 @@ func parseNodeDebug() (string, []string) {
 var nodeDebugMode, nodeDebugParams = parseNodeDebug()
 var moduleDebugEnabled = nodeDebugMode == "module"
 
+var resultColors = map[string]string{
+	"ok":        "\033[32m", // Green
+	"cached":    "\033[32m", // Green
+	"loaded":    "\033[32m", // Green
+	"native":    "\033[33m", // Yellow
+	"fatal":     "\033[31m", // Red
+	"invalid":   "\033[31m", // Red
+	"not found": "\033[90m", // Gray
+}
+
 // NodeJS module search algorithm described by
 // https://nodejs.org/api/modules.html#modules_all_together
 func (r *RequireModule) resolve(modpath string) (module *js.Object, err error) {
@@ -328,7 +338,12 @@ func moduleDebug(modPath string, result string) {
 			}
 		}
 		if shouldOutput {
-			println(fmt.Sprintf("resolve %s (%s)", modPath, result))
+			resultText := result
+			color, exists := resultColors[result]
+			if exists {
+				resultText = color + result + "\033[0m"
+			}
+			println(fmt.Sprintf("resolve %s (%s)", modPath, resultText))
 		}
 	}
 }
