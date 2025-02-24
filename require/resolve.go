@@ -179,6 +179,7 @@ func (r *RequireModule) loadAsDirectory(modpath string) (module *js.Object, err 
 	p := r.resolvePath(modpath, "package.json")
 	buf, err := r.r.getSource(p)
 	if err != nil {
+		moduleDebug(p, "fail")
 		return r.loadIndex(modpath)
 	}
 	var pkg struct {
@@ -186,13 +187,16 @@ func (r *RequireModule) loadAsDirectory(modpath string) (module *js.Object, err 
 	}
 	err = json.Unmarshal(buf, &pkg)
 	if err != nil || len(pkg.Main) == 0 {
+		moduleDebug(fmt.Sprintf("%s:Main", p), "fail")
 		return r.loadIndex(modpath)
 	}
 
 	m := r.resolvePath(modpath, pkg.Main)
 	if module, err = r.loadAsFile(m); module != nil || err != nil {
+		moduleDebug(m, "ok")
 		return
 	}
+	moduleDebug(m, "fail")
 
 	return r.loadIndex(m)
 }
@@ -237,7 +241,13 @@ func (r *RequireModule) getCurrentModulePath() string {
 	if len(frames) < 2 {
 		return "."
 	}
-	return path.Dir(frames[1].SrcName())
+	fname := frames[1].SrcName()
+	if runtime.GOOS != "windows" {
+		if resolved, err := filepath.EvalSymlinks(fname); err == nil {
+			fname = resolved
+		}
+	}
+	return path.Dir(fname)
 }
 
 func (r *RequireModule) createModuleObject() *js.Object {
